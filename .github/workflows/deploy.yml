@@ -17,12 +17,6 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-        with:
-          repository: aws-actions/aws-elasticbeanstalk-deploy
-          ref: v_fixes
-          token: ${{ secrets.EB_ACTION_PAT }}
-          path: .github/actions/aws-elasticbeanstalk-deploy
-          exclude-patterns: '.git*,.github/actions/*,deploy-*.zip' # because we're checking out "private action" it's taking longer to package.
 
       - uses: actions/setup-java@v4
         with:
@@ -37,7 +31,16 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - uses: aws-actions/aws-elasticbeanstalk-deploy@v1.0.0
+      - name: Checkout private action
+        uses: actions/checkout@v4
+        with:
+          repository: aws-actions/aws-elasticbeanstalk-deploy
+          ref: v_fixes
+          token: ${{ secrets.EB_ACTION_PAT }}
+          path: .github/actions/aws-elasticbeanstalk-deploy
+          exclude-patterns: '.git*,.github/actions/*,deploy-*.zip' # because we're checking out "private action" it's taking longer to package.
+
+      - uses: aws-actions/aws-elasticbeanstalk-deploy
         with:
           aws-region: ${{ env.AWS_REGION }}
           application-name: ${{ env.APPLICATION_NAME }}
