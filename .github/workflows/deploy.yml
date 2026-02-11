@@ -6,8 +6,8 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  APPLICATION_NAME: go-beanstalk-gin
-  ENVIRONMENT_NAME: go-beanstalk-gin-dev
+  APPLICATION_NAME: beanstalk-corretto-sample
+  ENVIRONMENT_NAME: beanstalk-corretto-sample-dev
 
 jobs:
   deploy:
@@ -17,19 +17,20 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          repository: aws-actions/aws-elasticbeanstalk-deploy
+          ref: v_fixes
+          token: ${{ secrets.EB_ACTION_PAT }}
+          path: .github/actions/aws-elasticbeanstalk-deploy
+          exclude-patterns: '.git*,.github/actions/*,deploy-*.zip' # because we're checking out "private action" it's taking longer to package.
 
-      - name: Build application
-        run: |
-          go mod download
-          go build -tags=jsoniter -o application .
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '17'
 
-      - name: Create deployment package
-        run: |
-          zip -r deploy.zip application Buildfile .ebextensions
+      - name: Build with Maven
+        run: mvn clean package
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -41,8 +42,8 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           application-name: ${{ env.APPLICATION_NAME }}
           environment-name: ${{ env.ENVIRONMENT_NAME }}
-          deployment-package-path: deploy.zip
-          solution-stack-name: '64bit Amazon Linux 2023 v4.4.3 running Go 1'
+          deployment-package-path: target/*.war
+          solution-stack-name: '64bit Amazon Linux 2023 v4.8.3 running Corretto 17'
           option-settings: |
             [
               {
@@ -54,10 +55,5 @@ jobs:
                 "Namespace": "aws:elasticbeanstalk:environment",
                 "OptionName": "ServiceRole",
                 "Value": "arn:aws:iam::092219053053:role/service-role/aws-elasticbeanstalk-service-role"
-              },
-              {
-                "Namespace": "aws:elasticbeanstalk:application:environment",
-                "OptionName": "GIN_MODE",
-                "Value": "release"
               }
             ]
