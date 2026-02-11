@@ -1,0 +1,63 @@
+name: Deploy to Elastic Beanstalk
+
+on:
+  push:
+    branches: [main, master]
+
+env:
+  AWS_REGION: us-east-1
+  APPLICATION_NAME: go-beanstalk-gin
+  ENVIRONMENT_NAME: go-beanstalk-gin-dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build application
+        run: |
+          go mod download
+          go build -tags=jsoniter -o application .
+
+      - name: Create deployment package
+        run: |
+          zip -r deploy.zip application Buildfile .ebextensions
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/aws-elasticbeanstalk-deploy@v1.0.0
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          application-name: ${{ env.APPLICATION_NAME }}
+          environment-name: ${{ env.ENVIRONMENT_NAME }}
+          deployment-package-path: deploy.zip
+          solution-stack-name: '64bit Amazon Linux 2023 v4.4.3 running Go 1'
+          option-settings: |
+            [
+              {
+                "Namespace": "aws:autoscaling:launchconfiguration",
+                "OptionName": "IamInstanceProfile",
+                "Value": "aws-elasticbeanstalk-ec2-role"
+              },
+              {
+                "Namespace": "aws:elasticbeanstalk:environment",
+                "OptionName": "ServiceRole",
+                "Value": "arn:aws:iam::092219053053:role/service-role/aws-elasticbeanstalk-service-role"
+              },
+              {
+                "Namespace": "aws:elasticbeanstalk:application:environment",
+                "OptionName": "GIN_MODE",
+                "Value": "release"
+              }
+            ]
