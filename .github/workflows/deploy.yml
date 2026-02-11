@@ -36,7 +36,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           application-name: ${{ env.APPLICATION_NAME }}
           environment-name: ${{ env.ENVIRONMENT_NAME }}
-          deployment-package-path: target/*.jar
+          deployment-package-path: beanstalk-corretto-sample/target/*.jar
           solution-stack-name: '64bit Amazon Linux 2023 v4.8.3 running Corretto 17'
           option-settings: |
             [
