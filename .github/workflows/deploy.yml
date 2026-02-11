@@ -40,7 +40,7 @@ jobs:
           path: .github/actions/aws-elasticbeanstalk-deploy
           exclude-patterns: '.git*,.github/actions/*,deploy-*.zip' # because we're checking out "private action" it's taking longer to package.
 
-      - uses: aws-actions/aws-elasticbeanstalk-deploy
+      - uses: ./.github/actions/aws-elasticbeanstalk-deploy
         with:
           aws-region: ${{ env.AWS_REGION }}
           application-name: ${{ env.APPLICATION_NAME }}
