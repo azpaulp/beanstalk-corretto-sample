@@ -1,0 +1,1 @@
+# beanstalk-corretto-sample
